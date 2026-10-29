@@ -1,0 +1,44 @@
+--- m32c.cc.orig	2026-09-30 20:55:18
++++ m32c.cc	2026-09-30 20:55:18
+@@ -4014,12 +4014,10 @@
+ static int
+ m32c_leaf_function_p (void)
+ {
+-  int rv;
+-
+-  push_topmost_sequence ();
+-  rv = leaf_function_p ();
+-  pop_topmost_sequence ();
+-  return rv;
++  /* Patched: leaf_function_p () asserts when called from inside a
++     sequence (GCC 14). crtl->is_leaf is computed by IRA before the
++     prologue is emitted.  */
++  return crtl->is_leaf;
+ }
+ 
+ /* Returns TRUE if the current function needs to use the ENTER/EXIT
+--- mov.md.orig	2026-09-30 20:57:33
++++ mov.md	2026-09-30 20:57:33
+@@ -57,8 +57,8 @@
+ 			  "Rhi*Rmm,SF, iRqi*Rmm, iRqiSd*Rmm, >,         Rqi*Rmm, SdSs,    i"))]
+   "m32c_mov_ok (operands, QImode)"
+   "@
+-    lde.b\t%1,%0
+     ste.b\t%1,%0
++    lde.b\t%1,%0
+     mov.b\t%1,%0
+     push.b\t%1
+     pop.b\t%0
+--- addsub.md.orig	2026-09-30 21:02:26
++++ addsub.md	2026-09-30 21:02:26
+@@ -94,8 +94,8 @@
+     case 2:
+       if (GET_CODE (operands[2]) == SYMBOL_REF)
+         {
+-          output_asm_insn (\"add.w #%%lo(%d2),%h0\",operands);
+-          return \"adc.w #%%hi(%d2),%H0\";
++          output_asm_insn (\"add.w #%%lo16(%d2),%h0\",operands);
++          return \"adc.w #%%hi16(%d2),%H0\";
+         }
+       else
+         {
